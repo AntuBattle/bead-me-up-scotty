@@ -19,6 +19,7 @@ import { useResizableWidth } from "@/hooks/use-resizable-width";
 import { DescriptionContent } from "@/components/description-content";
 import { MarkdownToolbar, applyTransform } from "@/components/markdown-toolbar";
 import { bold, italic, link } from "@/lib/markdown-edit";
+import { isSubmitKey } from "@/lib/keyboard-shortcuts";
 import { AiAssistPanel } from "@/components/ai-assist-panel";
 import {
   useUpdateBead,
@@ -322,6 +323,13 @@ function DrawerBody({
       { onSuccess: () => setEditing(false) },
     );
   };
+  const canComment = !readOnly && !!draft.trim() && !addComment.isPending;
+  const postComment = () => {
+    const submitted = draft;
+    addComment.mutate({ id: bead.id, text: submitted.trim() }, {
+      onSuccess: () => setDraft((current) => current === submitted ? "" : current),
+    });
+  };
 
   const o = beadOrigin(bead, humanAllowlist);
   const ep = parentOf(bead, index);
@@ -475,6 +483,11 @@ function DrawerBody({
               autoFocus
               value={titleDraft}
               onChange={(e) => setTitleDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (!isSubmitKey(e)) return;
+                e.preventDefault();
+                saveEdit();
+              }}
               placeholder="Title"
               className="mb-[14px] w-full rounded-[9px] border border-border bg-[var(--surface-2)] px-[11px] py-[9px] text-[18px] font-[650] leading-[1.25] tracking-[-.02em] text-[var(--text)] outline-none focus:border-[var(--brand)]"
             />
@@ -575,7 +588,7 @@ function DrawerBody({
               onChange={(e) => setCloseDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Escape") cancelClosing();
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) confirmClose();
+                if (isSubmitKey(e)) confirmClose();
               }}
               rows={3}
               placeholder="Why is this done? A commit, a PR link, or a one-liner. Markdown and bead IDs render."
@@ -652,7 +665,7 @@ function DrawerBody({
                   onPaste={drop.onPaste}
                   onKeyDown={(e) => {
                     // Cmd/Ctrl+Enter saves the edit, mirroring the create modal.
-                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                    if (isSubmitKey(e)) {
                       e.preventDefault();
                       saveEdit();
                       return;
@@ -1041,6 +1054,11 @@ function DrawerBody({
               <textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (!isSubmitKey(e)) return;
+                  e.preventDefault();
+                  if (canComment) postComment();
+                }}
                 placeholder={`Comment as ${actor}…`}
                 disabled={readOnly}
                 rows={2}
@@ -1048,13 +1066,8 @@ function DrawerBody({
               />
               <div className="flex justify-end">
                 <button
-                  disabled={readOnly || !draft.trim() || addComment.isPending}
-                  onClick={() => {
-                    const submitted = draft;
-                    addComment.mutate({ id: bead.id, text: submitted.trim() }, {
-                      onSuccess: () => setDraft((current) => current === submitted ? "" : current),
-                    });
-                  }}
+                  disabled={!canComment}
+                  onClick={postComment}
                   className="h-8 rounded-lg px-[14px] text-[12.5px] font-[550] text-white disabled:opacity-50"
                   style={{ background: "var(--brand)" }}
                 >

@@ -18,6 +18,7 @@ import { reviewLinks } from "@/lib/review-links";
 import { api } from "@/lib/api-client";
 import { DescriptionContent } from "@/components/description-content";
 import type { Bead } from "@/lib/schema";
+import { isSubmitKey } from "@/lib/keyboard-shortcuts";
 
 /**
  * Mission Control — "Needs You" decision inbox. Surfaces two kinds of items
@@ -192,6 +193,8 @@ function NeedsYouCard({ bead }: { bead: Bead }) {
   const [text, setText] = React.useState("");
   const o = beadOrigin(bead, humanAllowlist);
   const busy = respond.isPending || dismiss.isPending;
+  const canRespond = !readOnly && !busy && !!text.trim();
+  const submit = () => respond.mutate({ id: bead.id, text: text.trim() });
 
   return (
     <div
@@ -232,6 +235,11 @@ function NeedsYouCard({ bead }: { bead: Bead }) {
         disabled={readOnly}
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          if (!isSubmitKey(e)) return;
+          e.preventDefault();
+          if (canRespond) submit();
+        }}
         rows={2}
         placeholder="Answer the agent's question… (posts a comment; the bead stays open)"
         className="mb-2 w-full resize-y rounded-[9px] border border-border bg-[var(--surface-2)] p-[9px_11px] text-[13px] leading-[1.5] text-[var(--text)] outline-none focus:border-[var(--brand)]"
@@ -245,8 +253,8 @@ function NeedsYouCard({ bead }: { bead: Bead }) {
           Dismiss
         </button>
         <button
-          disabled={readOnly || busy || !text.trim()}
-          onClick={() => respond.mutate({ id: bead.id, text: text.trim() })}
+          disabled={!canRespond}
+          onClick={submit}
           className="flex h-8 items-center gap-[6px] rounded-lg px-3 text-[12.5px] font-[550] text-white disabled:opacity-50"
           style={{ background: "var(--brand)" }}
         >
