@@ -204,6 +204,23 @@ from the banner. This is a local viewing preference, not a permissions system.
 Project write requests are rejected by the server while the requesting browser
 is read-only; application settings remain available.
 
+### Opening Scotty by a hostname
+
+Scotty only answers browsers that address it as `localhost` (or `*.localhost`)
+or by an IP address such as `127.0.0.1` or `192.168.1.20`. Requests that arrive
+under any other hostname, and writes sent from another website, are refused.
+This stops web pages you visit from changing your beads or reading them through
+DNS rebinding. If you reach Scotty through a LAN name (`mybox.local`) or a
+reverse proxy domain, allow it explicitly:
+
+```bash
+SCOTTY_ALLOWED_HOSTS=mybox.local,tracker.example.com scotty
+```
+
+Scripts and tools that call the API at `localhost` or an IP address are
+unaffected; only browser requests carry the `Origin` header that the
+cross-site check looks at.
+
 ### Docker
 
 ```bash
@@ -249,6 +266,9 @@ Container limitations:
   the button shows an error in the container.
 - The bundled `bd` version is pinned in the Dockerfile (`ARG BD_VERSION`);
   override with `--build-arg BD_VERSION=<version>` to match your host.
+- Opening the container as `http://localhost:3000` or by IP works as-is; to use
+  a hostname, pass `-e SCOTTY_ALLOWED_HOSTS=<name>` (see
+  [Opening Scotty by a hostname](#opening-scotty-by-a-hostname)).
 
 ## Install globally
 
