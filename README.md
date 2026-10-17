@@ -217,6 +217,13 @@ reverse proxy domain, allow it explicitly:
 SCOTTY_ALLOWED_HOSTS=mybox.local,tracker.example.com scotty
 ```
 
+`SCOTTY_ALLOWED_HOSTS=*` accepts any hostname. That turns off the DNS-rebinding
+protection, so only use it when something else (a reverse proxy, a private
+network) decides who can reach Scotty. Writes sent from other websites are
+still refused even with `*`; to accept writes from a proxy's address, list
+that name explicitly. Each refusal explains which setting would allow it, both
+in the browser and once in the terminal running Scotty.
+
 Scripts and tools that call the API at `localhost` or an IP address are
 unaffected; only browser requests carry the `Origin` header that the
 cross-site check looks at.

@@ -24,6 +24,17 @@ assert.equal(checkRequest({ ...base, method: 'POST', origin: 'null' }).ok, false
 assert.equal(checkRequest({ ...base, method: 'DELETE', origin: null, secFetchSite: 'cross-site' }).ok, false);
 assert.equal(checkRequest({ ...base, method: 'GET', origin: 'http://evil.example' }).ok, true, 'reads are protected by CORS, not refused');
 assert.equal(checkRequest({ host: '127.0.0.1:3000', method: 'POST', origin: 'https://tracker.example', secFetchSite: null, allowedHosts: 'tracker.example' }).ok, true, 'allowed proxy origin');
+// "*" accepts any hostname but never re-enables cross-site writes.
+assert.equal(checkRequest({ host: 'anything.example', method: 'GET', origin: null, secFetchSite: null, allowedHosts: '*' }).ok, true);
+assert.equal(checkRequest({ host: 'anything.example', method: 'POST', origin: 'http://anything.example', secFetchSite: null, allowedHosts: '*' }).ok, true);
+assert.equal(checkRequest({ host: 'localhost:3000', method: 'POST', origin: 'http://evil.example', secFetchSite: null, allowedHosts: '*' }).ok, false);
+// Every refusal names the setting that would allow it.
+const hostRefusal = checkRequest({ host: 'mybox.local:3000', method: 'GET', origin: null, secFetchSite: null });
+assert.match(hostRefusal.error, /SCOTTY_ALLOWED_HOSTS=mybox\.local\b/);
+assert.match(hostRefusal.error, /SCOTTY_ALLOWED_HOSTS=\*/);
+const originRefusal = checkRequest({ ...base, method: 'POST', origin: 'https://tracker.example' });
+assert.match(originRefusal.error, /tracker\.example/);
+assert.match(originRefusal.error, /SCOTTY_ALLOWED_HOSTS=tracker\.example/);
 
 // ── Against the running server ──────────────────────────────────────────────
 const target = process.env.SCOTTY_TEST_URL;

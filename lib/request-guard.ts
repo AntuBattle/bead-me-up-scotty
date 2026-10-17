@@ -76,11 +76,13 @@ export function isAllowedHost(host: string | null, allowedHosts?: string): boole
 export function checkRequest(input: GuardInput): GuardVerdict {
   const { method, host, origin, secFetchSite, allowedHosts } = input;
   if (!isAllowedHost(host, allowedHosts)) {
+    const name = hostnameOf(host ?? "");
     return {
       ok: false,
       code: "host_not_allowed",
       error: `Scotty only answers requests addressed to localhost or an IP address. ` +
-        `To open it as "${hostnameOf(host ?? "")}", start it with SCOTTY_ALLOWED_HOSTS=${hostnameOf(host ?? "")}.`,
+        `To open it as "${name}", start it with SCOTTY_ALLOWED_HOSTS=${name} ` +
+        `(or SCOTTY_ALLOWED_HOSTS=* to accept any hostname).`,
     };
   }
   if (SAFE_METHODS.has(method.toUpperCase())) return { ok: true };
@@ -92,16 +94,26 @@ export function checkRequest(input: GuardInput): GuardVerdict {
       originHost = new URL(origin).host.toLowerCase();
     } catch { /* refused below */ }
     const sameHost = originHost !== null && host !== null && originHost === host.toLowerCase();
-    // A reverse proxy may rewrite Host; an explicitly allowed origin name still counts.
+    // A reverse proxy may rewrite Host; an explicitly allowed origin name still
+    // counts. "*" deliberately does not: it relaxes the Host check only, so
+    // "accept any hostname" never turns into "accept writes from any website".
     const allowedOrigin = originHost !== null && allowList(allowedHosts).includes(hostnameOf(originHost));
     if (!sameHost && !allowedOrigin) {
-      return { ok: false, code: "cross_origin", error: "Cross-site request refused." };
+      const name = originHost === null ? null : hostnameOf(originHost);
+      return {
+        ok: false,
+        code: "cross_origin",
+        error: name
+          ? `Refused a change sent from ${name}, which is not this Scotty's address. If you open Scotty through ` +
+            `${name} (for example a reverse proxy), start it with SCOTTY_ALLOWED_HOSTS=${name}.`
+          : "Refused a change sent from a sandboxed or local page (no web address).",
+      };
     }
     return { ok: true };
   }
   // Browsers that omit Origin still label cross-site requests.
   if (secFetchSite === "cross-site") {
-    return { ok: false, code: "cross_origin", error: "Cross-site request refused." };
+    return { ok: false, code: "cross_origin", error: "Refused a change sent from another website." };
   }
   return { ok: true };
 }

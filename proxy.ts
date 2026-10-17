@@ -26,6 +26,11 @@ import { checkRequest } from "@/lib/request-guard";
  * set at launch, and an Edge-runtime guard with SCOTTY_READ_ONLY inlined at
  * build time would have failed open while the UI still claimed read-only.
  */
+// Refusals are logged once per reason and address, so someone whose setup
+// stopped working sees the fix in the terminal running Scotty, not only in
+// a browser's network panel.
+const reported = new Set<string>();
+
 export function proxy(req: NextRequest) {
   const verdict = checkRequest({
     method: req.method,
@@ -35,6 +40,11 @@ export function proxy(req: NextRequest) {
     allowedHosts: process.env.SCOTTY_ALLOWED_HOSTS,
   });
   if (!verdict.ok) {
+    const key = `${verdict.code}:${verdict.error}`;
+    if (!reported.has(key)) {
+      reported.add(key);
+      console.warn(`[scotty] ${req.method} ${req.nextUrl.pathname} refused: ${verdict.error}`);
+    }
     if (req.nextUrl.pathname.startsWith("/api/")) {
       return NextResponse.json({ error: verdict.error, code: verdict.code }, { status: 403 });
     }
