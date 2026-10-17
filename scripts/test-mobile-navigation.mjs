@@ -99,6 +99,8 @@ async function desktopCheck() {
   try {
     await page.goto(`${base}/p/demo`, { waitUntil: "domcontentloaded" });
     const sidebars = page.locator("aside");
+    // At DOMContentLoaded the aside can still measure 0px wide; wait for layout.
+    await page.waitForFunction(() => document.querySelector("aside")?.getBoundingClientRect().width > 0);
     assert.equal(await sidebars.count(), 1, "desktop must render one Sidebar");
     const desktopSidebar = await sidebars.first().evaluate((element) => {
       const style = getComputedStyle(element);
