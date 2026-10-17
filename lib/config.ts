@@ -292,6 +292,18 @@ export function getConfig(): AppConfig {
   return cached;
 }
 
+/**
+ * The actor to close a bead as. bd refuses to close a claimed bead as anyone
+ * but its assignee. Before 0.3.1 Scotty wrote as the OS user, so beads people
+ * assigned to themselves then still carry that name. It is the same person on
+ * this machine, so close those as it rather than failing — #61 in reverse.
+ * Every other assignee (a teammate, an agent) keeps bd's protection.
+ */
+export function closeActor(assignee: string | null | undefined): string {
+  const { humanActor } = getConfig();
+  return assignee && assignee !== humanActor && assignee === osUserName() ? assignee : humanActor;
+}
+
 /** Update global settings (actor / allowlist / poll). Project registry has its own mutators. */
 export function saveConfig(
   patch: Partial<Pick<AppConfig, "humanActor" | "humanAllowlist" | "pollIntervalMs" | "gamification">>,
