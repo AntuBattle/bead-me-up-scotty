@@ -115,6 +115,11 @@ function SettingsForm({ data }: { data: DoctorResponse }) {
     },
     onError: (e) => toast.error((e as Error).message),
   });
+  const saveOnSubmitKey = (e: React.KeyboardEvent) => {
+    if (!isSubmitKey(e)) return;
+    e.preventDefault();
+    if (!save.isPending) save.mutate();
+  };
 
   const isDemo = data.kind === "demo";
 
@@ -153,11 +158,7 @@ function SettingsForm({ data }: { data: DoctorResponse }) {
             className={inputClass}
             value={actor}
             onChange={(e) => setActor(e.target.value)}
-            onKeyDown={(e) => {
-              if (!isSubmitKey(e)) return;
-              e.preventDefault();
-              if (!save.isPending) save.mutate();
-            }}
+            onKeyDown={saveOnSubmitKey}
           />
         </label>
         <div className="flex flex-col gap-[7px]">
@@ -214,6 +215,7 @@ function SettingsForm({ data }: { data: DoctorResponse }) {
               value={pollSec}
               onChange={(e) => setPollSec(e.target.value)}
               onBlur={() => setPollSec(String(clampSec(pollSec)))}
+              onKeyDown={saveOnSubmitKey}
               aria-label="Fallback refresh interval in seconds"
               className={`${inputClass} w-[72px] text-right font-mono`}
             />
