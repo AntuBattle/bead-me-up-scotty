@@ -49,4 +49,4 @@ Out of scope: setups that deliberately remove a protection, such as
 `SCOTTY_ALLOWED_HOSTS=*` without anything else controlling who can reach the
 server, or exposing Scotty to an untrusted network. Read-only mode is a viewing
 preference, not access control (see the README). Vulnerabilities in `bd` itself
-belong with the [beads project](https://github.com/steveyegge/beads).
+belong with the [beads project](https://github.com/gastownhall/beads).
