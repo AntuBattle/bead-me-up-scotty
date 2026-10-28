@@ -11,6 +11,11 @@ export interface KeyboardShortcutGroup {
   shortcuts: KeyboardShortcut[];
 }
 
+/** Cmd/Ctrl+Enter submits the focused text field, as its submit button would. */
+export function isSubmitKey(event: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey">) {
+  return event.key === "Enter" && (event.metaKey || event.ctrlKey);
+}
+
 export const VIEW_KEY_BINDINGS: Record<string, View> = {
   f: "focus",
   b: "board",
@@ -32,6 +37,7 @@ export const KEYBOARD_SHORTCUT_GROUPS: KeyboardShortcutGroup[] = [
       { keys: ["?"], label: "Show keyboard shortcuts" },
       { keys: ["⌘/Ctrl", "K"], label: "Open the command palette" },
       { keys: ["/"], label: "Focus search" },
+      { keys: ["⌘/Ctrl", "Enter"], label: "Submit the focused text field" },
       { keys: ["N"], label: "Create an issue" },
       { keys: ["T"], label: "Toggle light / dark theme" },
       { keys: ["Esc"], label: "Close the active drawer or dialog" },
