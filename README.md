@@ -345,6 +345,11 @@ npm run build         # typecheck + production build
 npm run lint          # eslint
 ```
 
+## Security
+
+Please report vulnerabilities privately, not in a public issue. See
+[SECURITY.md](SECURITY.md).
+
 ## License
 
 [MIT](LICENSE) © Brendan
